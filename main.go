@@ -1,8 +1,7 @@
 package main
 import("fmt"
-		"os"
-		"log"
-		"ism/Packages")
+		"ism/DS"
+		"ism/utilitary")
 
 /*
    Name: Matéo Pasquier
@@ -21,19 +20,12 @@ func main() {
 
 
 
-	// Read the file
-	file, err := os.Open("Input/particule.xyz");
-	if err != nil {
-		log.Fatal(err);
-	}
-
 
 	// Memory allocation
 	var pos data_structures.Vector3;
-	pos.X = append(pos.X, 69.0);
 
-	fmt.Println(pos.X[0]);
+	utilitary.ImportXYZ("Input/particule.xyz", &pos);
 
+	fmt.Println(pos.Z[1]);
 
-	file.Close();
 }
