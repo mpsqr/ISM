@@ -1,14 +1,14 @@
 package main
 import("fmt"
-		"ism/DS"
-		"ism/utilitary")
+	"ism/Packages/DataStructures"
+	"ism/Packages/utilitary")
 
 /*
-   Name: Matéo Pasquier
-   Email: mateo.pasquier@ens.uvsq.fr
-   Course Section: ISM
-   Instructions to build the program: go build main.go
-   Instructions to run the program: ./main
+   Nom : Matéo Pasquier
+   Email : mateo.pasquier@ens.uvsq.fr
+   Cours : ISM
+   Compilation : go build main.go
+   Lancement : ./main
 */
 
 
@@ -19,11 +19,8 @@ func main() {
 	fmt.Println("skibidi");
 
 
-
-
-	// Memory allocation
-	var pos data_structures.Vector3;
-
+	// Allocation mémoire
+	var pos data_structures.Vector3; // Positions, SOA
 	utilitary.ImportXYZ("Input/particule.xyz", &pos);
 
 	fmt.Println(pos.Z[1]);

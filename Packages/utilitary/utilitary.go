@@ -5,10 +5,11 @@ import ("fmt"
 		"bufio"
 		"strings"
 		"strconv"
-		"ism/DS")
+		"ism/Packages/DataStructures")
 
 func ImportXYZ(path string, pos *data_structures.Vector3) {
-		// Read the file
+	
+	// Lecture du fichier
 	file, err := os.Open(path);
 	if err != nil {
 		log.Fatal(err);
@@ -20,7 +21,7 @@ func ImportXYZ(path string, pos *data_structures.Vector3) {
 		line := scanner.Text();
 
 		parts := strings.Fields(line);
-		if len(parts) != 4 {
+		if len(parts) != 4 { // Ligne non valable
 			continue;
 		}
 
