@@ -1,4 +1,4 @@
-package data_structures
+package DataStructures
 
 type Vector3 struct {
 	X []float64

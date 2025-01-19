@@ -1,4 +1,4 @@
-package utilitary
+package Utilitary
 import ("fmt"
 		"os"
 		"log"
@@ -7,7 +7,7 @@ import ("fmt"
 		"strconv"
 		"ism/Packages/DataStructures")
 
-func ImportXYZ(path string, pos *data_structures.Vector3) {
+func ImportXYZ(path string, pos *DataStructures.Vector3) {
 	
 	// Lecture du fichier
 	file, err := os.Open(path);
