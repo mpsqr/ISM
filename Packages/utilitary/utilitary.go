@@ -1,11 +1,11 @@
 package Utilitary
 import ("fmt"
-		"os"
-		"log"
-		"bufio"
-		"strings"
-		"strconv"
-		"ism/Packages/DataStructures")
+	"os"
+	"log"
+	"bufio"
+	"strings"
+	"strconv"
+	"ism/Packages/DataStructures")
 
 func ImportXYZ(path string, pos *DataStructures.Vector3) {
 	
@@ -41,4 +41,12 @@ func ImportXYZ(path string, pos *DataStructures.Vector3) {
 
 	file.Close();
 
+}
+
+func IniVec3(vec *DataStructures.Vector3, val float64, N int) {
+	for i := 0; i < N; i++ {
+		vec.X = append(vec.X, val);
+		vec.Y = append(vec.Y, val);
+		vec.Z = append(vec.Z, val);
+	}
 }

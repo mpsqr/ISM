@@ -2,7 +2,7 @@ package main
 import("fmt"
 	"ism/Packages/DataStructures"
 	"ism/Packages/Utilitary"
-	"ism/Packages/Maths")
+	"ism/Packages/Kernels")
 
 /*
    Nom : Matéo Pasquier
@@ -14,17 +14,30 @@ import("fmt"
 
 
 const N int = 1000;
+const NLocal int = 100;
+
+const NSym int = 27;
 
 func main() {
 
-	fmt.Println("skibidi");
+	//fmt.Println("skibidi");
 
 
-	// Allocation mémoire
+	// Allocation
 	var pos DataStructures.Vector3; // Positions, SOA
+	var forces DataStructures.Vector3; // Forces
+	var forcesPeriodic DataStructures.Vector3; // Periodic forces
+
+
+	// Initialisation
 	Utilitary.ImportXYZ("Input/particule.xyz", &pos);
+	Utilitary.IniVec3(&forces, 0.0, N);
+	Utilitary.IniVec3(&forcesPeriodic, 0.0, N);
 
-	fmt.Println(pos.Z[1]);
-	fmt.Println(Maths.SquaredDistance(pos.X[0], pos.Y[0], pos.Z[0], pos.X[1], pos.Y[1], pos.Z[1]));
 
+	fmt.Println("ULJ: ", Kernels.ComputeForces(&pos, &forces, N));
+	fmt.Println("Somme des forces du système : ", Kernels.ComputeSumForces(&forces, N));
+
+	fmt.Println("ULJ periodic: ", Kernels.ComputeForcesPeriodic(&pos, &forcesPeriodic, N));
+	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodic, N));
 }
