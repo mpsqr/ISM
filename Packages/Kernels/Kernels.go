@@ -22,6 +22,12 @@ const RCut float64 = 10.0;
 const RCutSq float64 = RCut * RCut;
 const L float64 = 42.0;
 
+
+const dt float64 = 1.0;
+const CONVERSION_FORCE float64 = 0.0001 * 4.186;
+const mi float64 = 18.0; // Mass
+const CONSTANTE_R = 0.00199;
+
 var translate = [27][3]float64{
 	 {0.0,   0.0,   0.0},
 	 {0.0,   0.0,    L },
@@ -51,6 +57,7 @@ var translate = [27][3]float64{
 	 {-L ,   -L ,    L },
 	 {-L ,   -L ,   -L },
 }
+
 
 // Calcule les forces entre les particules
 func ComputeForces(pos *DataStructures.Vector3, forces *DataStructures.Vector3, N int) float64 {
@@ -95,44 +102,42 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 	for n := 0; n < NSym; n++ {
 		for i := 0; i < N; i++ {
 			for j := i+1; j < N; j++ {
-				if i != j {
 
-					var xj float64 = pos.X[j] + translate[n][X];
-					var yj float64 = pos.Y[j] + translate[n][Y];
-					var zj float64 = pos.Z[j] + translate[n][Z];
+				var xj float64 = pos.X[j] + translate[n][X];
+				var yj float64 = pos.Y[j] + translate[n][Y];
+				var zj float64 = pos.Z[j] + translate[n][Z];
 
 					
-					var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
+				var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
 
-					if dist < RCutSq {
-						// Optimisation des calculs des puissances
-						var r2 float64 = RSquared / (dist + FloatCompensation);
-						var r4 float64 = r2 * r2;
-						var r6 float64 = r4 * r2;
-						var r8 float64 = r4 * r4;
-						var r12 float64 = r8 * r4;
-						var r14 float64 = r12 * r2;
+				if dist < RCutSq {
+					// Optimisation des calculs des puissances
+					var r2 float64 = RSquared / (dist + FloatCompensation);
+					var r4 float64 = r2 * r2;
+					var r6 float64 = r4 * r2;
+					var r8 float64 = r4 * r4;
+					var r12 float64 = r8 * r4;
+					var r14 float64 = r12 * r2;
 
-						var localForce = EpsilonLJ * (r14 - r8);
+					var localForce = EpsilonLJ * (r14 - r8);
 
-						var forceX = localForce * (pos.X[i] - xj);
-						var forceY = localForce * (pos.Y[i] - yj);
-						var forceZ = localForce * (pos.Z[i] - zj);
+					var forceX = localForce * (pos.X[i] - xj);
+					var forceY = localForce * (pos.Y[i] - yj);
+					var forceZ = localForce * (pos.Z[i] - zj);
 						
-						// Mise à jour des forces
-						forces.X[i] += forceX;
-						forces.Y[i] += forceY;
-						forces.Z[i] += forceZ;
+					// Mise à jour des forces
+					forces.X[i] += forceX;
+					forces.Y[i] += forceY;
+					forces.Z[i] += forceZ;
 						
-						forces.X[j] -= forceX;
-						forces.Y[j] -= forceY;
-						forces.Z[j] -= forceZ;
+					forces.X[j] -= forceX;
+					forces.Y[j] -= forceY;
+					forces.Z[j] -= forceZ;
 						
 
 
 
-						energy += r12 - (r6 + r6);
-					}
+					energy += r12 - (r6 + r6);
 				}
 			}
 		}
@@ -143,4 +148,10 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 
 func ComputeSumForces(forces *DataStructures.Vector3, N int) float64 {
 	return Maths.Vec3Sum(forces, N);
+}
+
+
+
+func VelocityVerlet(pos *DataStructures.Vector3, vel *DataStructures.Vector3, forces *DataStructures.Vector3, N int) {
+	
 }

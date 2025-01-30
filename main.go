@@ -16,23 +16,24 @@ import("fmt"
 const N int = 1000;
 const NLocal int = 100;
 
-const NSym int = 27;
-
 func main() {
 
 	//fmt.Println("skibidi");
 
 
 	// Allocation
-	var pos DataStructures.Vector3; // Positions, SOA
-	var forces DataStructures.Vector3; // Forces
-	var forcesPeriodic DataStructures.Vector3; // Periodic forces
+	var pos = DataStructures.NewVector3(N); // Positions, SOA
+	var forces = DataStructures.NewVector3(N); // Forces
+	var forcesPeriodic = DataStructures.NewVector3(N); // Periodic forces
+	var velocitiesPeriodic = DataStructures.NewVector3(N); // Velocities
+
 
 
 	// Initialisation
 	Utilitary.ImportXYZ("Input/particule.xyz", &pos);
-	Utilitary.IniVec3(&forces, 0.0, N);
-	Utilitary.IniVec3(&forcesPeriodic, 0.0, N);
+	//Utilitary.IniVec3(&forces, 0.0, N);
+	//Utilitary.IniVec3(&forcesPeriodic, 0.0, N);
+	//Utilitary.IniVec3(&velocitiesPeriodic, 0.0, N);
 
 
 	fmt.Println("ULJ: ", Kernels.ComputeForces(&pos, &forces, N));
@@ -40,4 +41,9 @@ func main() {
 
 	fmt.Println("ULJ periodic: ", Kernels.ComputeForcesPeriodic(&pos, &forcesPeriodic, N));
 	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodic, N));
+
+
+
+	Kernels.VelocityVerlet(&pos, &velocitiesPeriodic, &forcesPeriodic, N);
+
 }
