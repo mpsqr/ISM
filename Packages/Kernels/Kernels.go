@@ -3,6 +3,7 @@ import (/*"fmt"*/
 	"ism/Packages/DataStructures"
 	"ism/Packages/Maths"
 	//"ism/Packages/Utilitary"
+	"math"
 	"math/rand"
 	/*"time"*/)
 
@@ -177,6 +178,8 @@ func CalibrateMoment(p *DataStructures.Vector3, N int) {
 	var kineticEnergy float64 = KineticEnergy(p, N);
 
 	var rapport float64 = (float64((3 * N) - 3) * CONSTANTE_R * T0) / kineticEnergy;
+
+	rapport = math.Sqrt(rapport);
 
 	for i := 0; i < N; i++ {
 		p.X[i] *= rapport;

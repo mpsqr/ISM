@@ -76,6 +76,8 @@ func main() {
 		fmt.Println("Énergie cinétique : ", cineticEnergy);
 		fmt.Println("Température cinétique : ", cineticTemperature);
 		fmt.Println("Énergie totale : ", U + cineticEnergy);
+
+		Utilitary.ExportXYZ("Results/iteration_" + strconv.Itoa(i) + ".xyz", &pos);
 	}
 
 }

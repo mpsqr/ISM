@@ -46,6 +46,36 @@ func ImportXYZ(path string, pos *DataStructures.Vector3) {
 
 }
 
+func ExportXYZ(path string, pos *DataStructures.Vector3) {
+
+	file, err := os.Create(path);
+
+	if err != nil {
+		fmt.Println("Error creating the file.");
+		return;
+	}
+
+
+	// Write comment
+	_, err = fmt.Fprintf(file, "0 1\n");
+	if err != nil {
+		fmt.Println("Error writing to file.");
+		return;
+	}
+
+
+	// Write atom data
+	for i := 0; i < len(pos.X); i++ {
+		_, err = fmt.Fprintf(file, "%d %.6f %.6f %.6f\n", 2, pos.X[i], pos.Y[i], pos.Z[i]);
+		if err != nil {
+			fmt.Println("Error writing to file.");
+			return;
+		}
+	}
+
+	file.Close();
+}
+
 func CopyVec3(to *DataStructures.Vector3, from *DataStructures.Vector3) {
 	copy(to.X, from.X);
 	copy(to.Y, from.Y);
