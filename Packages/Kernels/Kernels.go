@@ -1,7 +1,10 @@
 package Kernels
 import (/*"fmt"*/
 	"ism/Packages/DataStructures"
-	"ism/Packages/Maths")
+	"ism/Packages/Maths"
+	//"ism/Packages/Utilitary"
+	"math/rand"
+	/*"time"*/)
 
 
 const (
@@ -22,11 +25,13 @@ const RCut float64 = 10.0;
 const RCutSq float64 = RCut * RCut;
 const L float64 = 42.0;
 
+const T0 float64 = 300.0;
 
-const dt float64 = 1.0;
+const deltaT float64 = 1.0;
 const CONVERSION_FORCE float64 = 0.0001 * 4.186;
 const mi float64 = 18.0; // Mass
-const CONSTANTE_R = 0.00199;
+const CONSTANTE_R float64 = 0.00199;
+
 
 var translate = [27][3]float64{
 	 {0.0,   0.0,   0.0},
@@ -152,6 +157,127 @@ func ComputeSumForces(forces *DataStructures.Vector3, N int) float64 {
 
 
 
-func VelocityVerlet(pos *DataStructures.Vector3, vel *DataStructures.Vector3, forces *DataStructures.Vector3, N int) {
-	
+
+func KineticEnergy(p *DataStructures.Vector3, N int) float64 {
+	var sum float64 = 0.0;
+	for i := 0; i < N; i++ {
+		sum += ((p.X[i] * p.X[i]) + (p.Y[i] * p.Y[i]) + (p.Z[i] * p.Z[i])) / mi;
+	}
+
+	//return 1.0 / (2 * CONVERSION_FORCE) * (sum / mi);
+	return sum / (2 * CONVERSION_FORCE);
 }
+
+func KineticTemperature(cineticEnergy float64, N int) float64 {
+	return 1.0 / (float64( ((3 * N) -3) ) * CONSTANTE_R) * cineticEnergy;
+}
+
+
+func CalibrateMoment(p *DataStructures.Vector3, N int) {
+	var kineticEnergy float64 = KineticEnergy(p, N);
+
+	var rapport float64 = (float64((3 * N) - 3) * CONSTANTE_R * T0) / kineticEnergy;
+
+	for i := 0; i < N; i++ {
+		p.X[i] *= rapport;
+		p.Y[i] *= rapport;
+		p.Z[i] *= rapport;
+	}
+}
+
+
+func GenerateMoment(p *DataStructures.Vector3, N int) {
+	rand.Seed(0);
+
+	for i := 0; i < N; i++ {
+		var cx float64 = rand.Float64();
+		var cy float64 = rand.Float64();
+		var cz float64 = rand.Float64();
+
+		p.X[i] = Maths.Sign((rand.Float64() * 2) - 1) * cx;
+		p.Y[i] = Maths.Sign((rand.Float64() * 2) - 1) * cy;
+		p.Z[i] = Maths.Sign((rand.Float64() * 2) - 1) * cz;
+	}
+
+	CalibrateMoment(p, N);
+}
+
+func CenterOfMassCorrection(p *DataStructures.Vector3, N int) {
+	var Px float64 = 0.0;
+	var Py float64 = 0.0;
+	var Pz float64 = 0.0;
+
+	for i := 0; i < N; i++ {
+		Px += p.X[i];
+		Py += p.Y[i];
+		Pz += p.Z[i];
+	}
+
+	Px /= float64(N);
+	Py /= float64(N);
+	Pz /= float64(N);
+
+	for i := 0; i < N; i++ {
+		p.X[i] -= Px;
+		p.Y[i] -= Py;
+		p.Z[i] -= Pz;
+	}
+
+	CalibrateMoment(p, N);
+}
+
+func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
+	for i := 0; i < N; i++ {
+		p.X[i] += 0.5 * forces.X[i] * deltaT / mi;
+		p.Y[i] += 0.5 * forces.Y[i] * deltaT / mi;
+		p.Z[i] += 0.5 * forces.Z[i] * deltaT / mi;
+
+		pos.X[i] += p.X[i] * deltaT / mi;
+		pos.Y[i] += p.Y[i] * deltaT / mi;
+		pos.Z[i] += p.Z[i] * deltaT / mi;
+	}
+
+	ComputeForcesPeriodic(pos, forces, N);
+
+	for i := 0; i < N; i++ {
+		p.X[i] += 0.5 * forces.X[i] * deltaT / mi;
+		p.Y[i] += 0.5 * forces.Y[i] * deltaT / mi;
+		p.Z[i] += 0.5 * forces.Z[i] * deltaT / mi;
+	}
+
+}
+
+/*
+func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
+
+	var newForces = DataStructures.NewVector3(N);
+	var d2 float64 = deltaT*deltaT;
+
+	for i := 0; i < N; i++ { // Update positions
+
+		pos.X[i] += (vel.X[i] * deltaT) + ((0.5 * (forces.X[i] / mi)) * d2);
+		pos.Y[i] += (vel.Y[i] * deltaT) + ((0.5 * (forces.Y[i] / mi)) * d2);
+		pos.Z[i] += (vel.Z[i] * deltaT) + ((0.5 * (forces.Z[i] / mi)) * d2);
+	}
+
+	ComputeForcesPeriodic(pos, &newForces, N);
+
+	for i := 0; i < N; i++ { // Update velocities
+		vel.X[i] += (0.5 * (forces.X[i] + newForces.X[i]) / mi) * deltaT;
+		vel.Y[i] += (0.5 * (forces.Y[i] + newForces.Y[i]) / mi) * deltaT;
+		vel.Z[i] += (0.5 * (forces.Z[i] + newForces.Z[i]) / mi) * deltaT;
+
+		forces.X[i] = newForces.X[i];
+		forces.Y[i] = newForces.Y[i];
+		forces.Z[i] = newForces.Z[i];
+
+		
+		p.X[i] = vel.X[i] / mi;
+		p.Y[i] = vel.Y[i] / mi;
+		p.Z[i] = vel.Z[i] / mi;
+		
+	}
+
+	//Utilitary.CopyVec3(forces, &newForces);
+}
+*/

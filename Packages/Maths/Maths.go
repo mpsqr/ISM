@@ -16,3 +16,10 @@ func Vec3Sum(vec *DataStructures.Vector3, N int) float64 {
 	}
 	return sum;
 }
+
+func Sign(val float64) float64 {
+	if val < 0.0 {
+		return -1.0;
+	}
+	return 1.0;
+}

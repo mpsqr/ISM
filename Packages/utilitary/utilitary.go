@@ -46,6 +46,12 @@ func ImportXYZ(path string, pos *DataStructures.Vector3) {
 
 }
 
+func CopyVec3(to *DataStructures.Vector3, from *DataStructures.Vector3) {
+	copy(to.X, from.X);
+	copy(to.Y, from.Y);
+	copy(to.Z, from.Z);
+}
+
 func IniVec3(vec *DataStructures.Vector3, val float64, N int) {
 	for i := 0; i < N; i++ {
 		vec.X[i] = val;
