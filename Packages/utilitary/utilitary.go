@@ -45,7 +45,7 @@ func ImportXYZ(path string, pos *DataStructures.Vector3) {
 	file.Close();
 
 }
-
+/*
 func ExportXYZ(path string, pos *DataStructures.Vector3) {
 
 	file, err := os.Create(path);
@@ -75,6 +75,41 @@ func ExportXYZ(path string, pos *DataStructures.Vector3) {
 
 	file.Close();
 }
+*/
+
+func ExportXYZ(path string, pos *DataStructures.Vector3, iter int, N int) error {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644);
+	if err != nil {
+		return err
+	}
+	defer file.Close();
+
+	// Écrire l'en-tête CRYST1 et MODEL
+	_, err = fmt.Fprintf(file, "CRYST1%9.3f%9.3f%9.3f  90.00  90.00  90.00 P             1\n", 42.0, 42.0, 42.0);
+	if err != nil {
+		return err;
+	}
+	_, err = fmt.Fprintf(file, "MODEL     %d\n", iter);
+	if err != nil {
+		return err;
+	}
+
+	// Écrire les coordonnées des particules
+	for i := 0; i < N; i++ {
+		_, err = fmt.Fprintf(file, "ATOM  %5d  C           0    %8.3f%8.3f%8.3f                 MRES\n", i, pos.X[i], pos.Y[i], pos.Z[i]);
+		if err != nil {
+			return err;
+		}
+	}
+
+	// Écrire les lignes de fin
+	_, err = fmt.Fprintf(file, "TER\nENDMDL\n");
+	if err != nil {
+		return err;
+	}
+
+	return nil;
+}
 
 func CopyVec3(to *DataStructures.Vector3, from *DataStructures.Vector3) {
 	copy(to.X, from.X);
@@ -89,11 +124,12 @@ func IniVec3(vec *DataStructures.Vector3, val float64, N int) {
 		vec.Z[i] = val;
 	}
 }
-
-func resetVec3(vec *DataStructures.Vector3, N int) {
+/*
+func ResetVec3(vec *DataStructures.Vector3, N int) {
 	var zeroSlice = make([]float64, N);
 
 	copy(vec.X, zeroSlice);
 	copy(vec.Y, zeroSlice);
 	copy(vec.Z, zeroSlice);
 }
+*/

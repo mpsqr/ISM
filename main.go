@@ -52,9 +52,10 @@ func main() {
 	fmt.Println("ULJ periodic: ", Kernels.ComputeForcesPeriodic(&pos, &forcesPeriodic, N));
 	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodic, N));
 
-
+	/*
 	Kernels.GenerateMoment(&angularMomentum, N);
 	Kernels.CenterOfMassCorrection(&angularMomentum, N);
+	*/
 
 
 	fmt.Println("\n\n---------------Début de la simulation---------------\n\n");
@@ -62,6 +63,8 @@ func main() {
 	var cineticEnergy float64 = 0.0;
 	var cineticTemperature float64 = 0.0;
 	var U float64 = 0.0;
+
+	Kernels.GenerateMoment(&angularMomentum, N);
 
 	for i := 0; i < iters; i++ {
 		fmt.Println("\n-----Itération", i, "-----\n");
@@ -74,10 +77,11 @@ func main() {
 		cineticTemperature = Kernels.KineticTemperature(cineticEnergy, N);
 
 		fmt.Println("Énergie cinétique : ", cineticEnergy);
+		fmt.Println("Somme des forces périodiques : ", U);
 		fmt.Println("Température cinétique : ", cineticTemperature);
 		fmt.Println("Énergie totale : ", U + cineticEnergy);
 
-		Utilitary.ExportXYZ("Results/iteration_" + strconv.Itoa(i) + ".xyz", &pos);
+		Utilitary.ExportXYZ("Results/res" + ".pdb", &pos, i, N);
 	}
 
 }

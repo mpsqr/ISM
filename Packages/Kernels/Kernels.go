@@ -2,7 +2,7 @@ package Kernels
 import (/*"fmt"*/
 	"ism/Packages/DataStructures"
 	"ism/Packages/Maths"
-	//"ism/Packages/Utilitary"
+	/*"ism/Packages/Utilitary"*/
 	"math"
 	"math/rand"
 	/*"time"*/)
@@ -33,6 +33,8 @@ const CONVERSION_FORCE float64 = 0.0001 * 4.186;
 const mi float64 = 18.0; // Mass
 const CONSTANTE_R float64 = 0.00199;
 
+const GAMMA float64 = 0.01;
+
 
 var translate = [27][3]float64{
 	 {0.0,   0.0,   0.0},
@@ -62,6 +64,14 @@ var translate = [27][3]float64{
 	 {-L ,   -L ,   0.0},
 	 {-L ,   -L ,    L },
 	 {-L ,   -L ,   -L },
+}
+
+func ResetVec3(vec *DataStructures.Vector3, N int) {
+	var zeroSlice = make([]float64, N);
+
+	copy(vec.X, zeroSlice);
+	copy(vec.Y, zeroSlice);
+	copy(vec.Z, zeroSlice);
 }
 
 
@@ -104,6 +114,7 @@ func ComputeForces(pos *DataStructures.Vector3, forces *DataStructures.Vector3, 
 func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.Vector3, N int) float64 {
 	
 	var energy float64 = 0.0;
+	ResetVec3(forces, N);
 
 	for n := 0; n < NSym; n++ {
 		for i := 0; i < N; i++ {
@@ -113,10 +124,10 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 				var yj float64 = pos.Y[j] + translate[n][Y];
 				var zj float64 = pos.Z[j] + translate[n][Z];
 
-					
+				
 				var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
 
-				if dist < RCutSq {
+				if dist < RCutSq /*|| dist > 1e-6*/ {
 					// Optimisation des calculs des puissances
 					var r2 float64 = RSquared / (dist + FloatCompensation);
 					var r4 float64 = r2 * r2;
@@ -132,13 +143,13 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 					var forceZ = localForce * (pos.Z[i] - zj);
 						
 					// Mise à jour des forces
-					forces.X[i] += forceX;
-					forces.Y[i] += forceY;
-					forces.Z[i] += forceZ;
+					forces.X[i] -= forceX;
+					forces.Y[i] -= forceY;
+					forces.Z[i] -= forceZ;
 						
-					forces.X[j] -= forceX;
-					forces.Y[j] -= forceY;
-					forces.Z[j] -= forceZ;
+					forces.X[j] += forceX;
+					forces.Y[j] += forceY;
+					forces.Z[j] += forceZ;
 						
 
 
@@ -188,23 +199,6 @@ func CalibrateMoment(p *DataStructures.Vector3, N int) {
 	}
 }
 
-
-func GenerateMoment(p *DataStructures.Vector3, N int) {
-	rand.Seed(0);
-
-	for i := 0; i < N; i++ {
-		var cx float64 = rand.Float64();
-		var cy float64 = rand.Float64();
-		var cz float64 = rand.Float64();
-
-		p.X[i] = Maths.Sign((rand.Float64() * 2) - 1) * cx;
-		p.Y[i] = Maths.Sign((rand.Float64() * 2) - 1) * cy;
-		p.Z[i] = Maths.Sign((rand.Float64() * 2) - 1) * cz;
-	}
-
-	CalibrateMoment(p, N);
-}
-
 func CenterOfMassCorrection(p *DataStructures.Vector3, N int) {
 	var Px float64 = 0.0;
 	var Py float64 = 0.0;
@@ -226,14 +220,44 @@ func CenterOfMassCorrection(p *DataStructures.Vector3, N int) {
 		p.Z[i] -= Pz;
 	}
 
+	//CalibrateMoment(p, N);
+}
+
+func GenerateMoment(p *DataStructures.Vector3, N int) {
+	rand.Seed(0);
+
+	for i := 0; i < N; i++ {
+		var cx float64 = rand.Float64();
+		var cy float64 = rand.Float64();
+		var cz float64 = rand.Float64();
+
+		p.X[i] = Maths.Sign((rand.Float64() * 2) - 1) * cx;
+		p.Y[i] = Maths.Sign((rand.Float64() * 2) - 1) * cy;
+		p.Z[i] = Maths.Sign((rand.Float64() * 2) - 1) * cz;
+	}
+
 	CalibrateMoment(p, N);
+	CenterOfMassCorrection(p, N);
+	CalibrateMoment(p, N);
+}
+
+
+func BerendsenCorrection(p *DataStructures.Vector3, N int) {
+	var cineticEnergy float64 = KineticEnergy(p, N);
+	var ratio float64 = T0 / KineticTemperature(cineticEnergy, N);
+
+	for i := 0; i < N; i++ {
+		p.X[i] = p.X[i] + (GAMMA * (ratio - 1.0) * p.X[i]);
+		p.Y[i] = p.Y[i] + (GAMMA * (ratio - 1.0) * p.Y[i]);
+		p.Z[i] = p.Z[i] + (GAMMA * (ratio - 1.0) * p.Z[i]);
+	}
 }
 
 func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
 	for i := 0; i < N; i++ {
-		p.X[i] += 0.5 * forces.X[i] * deltaT / mi;
-		p.Y[i] += 0.5 * forces.Y[i] * deltaT / mi;
-		p.Z[i] += 0.5 * forces.Z[i] * deltaT / mi;
+		p.X[i] -= 0.5 * forces.X[i] * deltaT;
+		p.Y[i] -= 0.5 * forces.Y[i] * deltaT;
+		p.Z[i] -= 0.5 * forces.Z[i] * deltaT;
 
 		pos.X[i] += p.X[i] * deltaT / mi;
 		pos.Y[i] += p.Y[i] * deltaT / mi;
@@ -243,10 +267,12 @@ func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3,
 	ComputeForcesPeriodic(pos, forces, N);
 
 	for i := 0; i < N; i++ {
-		p.X[i] += 0.5 * forces.X[i] * deltaT / mi;
-		p.Y[i] += 0.5 * forces.Y[i] * deltaT / mi;
-		p.Z[i] += 0.5 * forces.Z[i] * deltaT / mi;
+		p.X[i] -= 0.5 * forces.X[i] * deltaT;
+		p.Y[i] -= 0.5 * forces.Y[i] * deltaT;
+		p.Z[i] -= 0.5 * forces.Z[i] * deltaT;
 	}
+
+	//BerendsenCorrection(p, N);
 
 }
 
