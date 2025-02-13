@@ -111,6 +111,7 @@ func ComputeForces(pos *DataStructures.Vector3, forces *DataStructures.Vector3, 
 	return (energy * Epsilon) * 4.0;
 }
 
+
 func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.Vector3, N int) float64 {
 	
 	var energy float64 = 0.0;
@@ -143,13 +144,13 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 					var forceZ = localForce * (pos.Z[i] - zj);
 						
 					// Mise à jour des forces
-					forces.X[i] -= forceX;
-					forces.Y[i] -= forceY;
-					forces.Z[i] -= forceZ;
+					forces.X[i] += forceX;
+					forces.Y[i] += forceY;
+					forces.Z[i] += forceZ;
 						
-					forces.X[j] += forceX;
-					forces.Y[j] += forceY;
-					forces.Z[j] += forceZ;
+					forces.X[j] -= forceX;
+					forces.Y[j] -= forceY;
+					forces.Z[j] -= forceZ;
 						
 
 
@@ -254,25 +255,47 @@ func BerendsenCorrection(p *DataStructures.Vector3, N int) {
 }
 
 func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
+
+	var hdt float64 = deltaT * 0.5;
+
 	for i := 0; i < N; i++ {
-		p.X[i] -= 0.5 * forces.X[i] * deltaT;
-		p.Y[i] -= 0.5 * forces.Y[i] * deltaT;
-		p.Z[i] -= 0.5 * forces.Z[i] * deltaT;
+		p.X[i] -= hdt * (forces.X[i] * CONVERSION_FORCE);
+		p.Y[i] -= hdt * (forces.Y[i] * CONVERSION_FORCE);
+		p.Z[i] -= hdt * (forces.Z[i] * CONVERSION_FORCE);
 
 		pos.X[i] += p.X[i] * deltaT / mi;
 		pos.Y[i] += p.Y[i] * deltaT / mi;
 		pos.Z[i] += p.Z[i] * deltaT / mi;
 	}
+	
+	for i := 0; i < N; i++ {
+		pos.X[i] -= math.Round((pos.X[i] / L) + 0.5) * L;
+		pos.Y[i] -= math.Round((pos.Y[i] / L) + 0.5) * L;
+		pos.Z[i] -= math.Round((pos.Z[i] / L) + 0.5) * L;
+	}
+	
+	/*
+	for i := 0; i < N; i++ {
+		if math.Abs(pos.X[i]) > L * 0.5 {
+			pos.X[i] = pos.X[i] - (L*0.5) * Maths.Sign(-pos.X[i]);
+		}
+		if math.Abs(pos.Y[i]) > L * 0.5 {
+			pos.Y[i] = pos.Y[i] - (L*0.5) * Maths.Sign(-pos.Y[i]);
+		}
+		if math.Abs(pos.Z[i]) > L * 0.5 {
+			pos.Z[i] = pos.Z[i] - (L*0.5) * Maths.Sign(-pos.Z[i]);
+		}
+	}
+	*/
+
 
 	ComputeForcesPeriodic(pos, forces, N);
 
 	for i := 0; i < N; i++ {
-		p.X[i] -= 0.5 * forces.X[i] * deltaT;
-		p.Y[i] -= 0.5 * forces.Y[i] * deltaT;
-		p.Z[i] -= 0.5 * forces.Z[i] * deltaT;
+		p.X[i] -= hdt * (forces.X[i] * CONVERSION_FORCE);
+		p.Y[i] -= hdt * (forces.Y[i] * CONVERSION_FORCE);
+		p.Z[i] -= hdt * (forces.Z[i] * CONVERSION_FORCE);
 	}
-
-	//BerendsenCorrection(p, N);
 
 }
 
