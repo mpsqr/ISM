@@ -1,5 +1,6 @@
 package main
 import("fmt"
+	"time"
 	"os"
 	"strconv"
 	"ism/Packages/DataStructures"
@@ -41,12 +42,16 @@ func main() {
 	var pos = DataStructures.NewVector3(N); // Positions, SOA
 	var forces = DataStructures.NewVector3(N); // Forces
 	var forcesPeriodic = DataStructures.NewVector3(N); // Periodic forces
+	var forcesPeriodicLists = DataStructures.NewVector3(N); // Periodic forces with Verlet Lists
 	var moment = DataStructures.NewVector3(N); // Moment
+	var VerletLists = DataStructures.NewList(N);
 
 
 
 	// Initialisation
 	Utilitary.ImportXYZ(InputFile, &pos);
+	Kernels.BuildVerletLists(&pos, &VerletLists, N);
+
 
 
 	fmt.Println("ULJ: ", Kernels.ComputeForces(&pos, &forces, N));
@@ -55,10 +60,8 @@ func main() {
 	fmt.Println("ULJ periodic: ", Kernels.ComputeForcesPeriodic(&pos, &forcesPeriodic, N));
 	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodic, N));
 
-	/*
-	Kernels.GenerateMoment(&moment, N);
-	Kernels.CenterOfMassCorrection(&moment, N);
-	*/
+	fmt.Println("ULJ periodic with Verlet Lists: ", Kernels.ComputeForcesPeriodicLists(&pos, &forcesPeriodicLists, &VerletLists, N));
+	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodicLists, N));
 
 
 	fmt.Println("\n\n---------------Début de la simulation---------------\n\n");
@@ -67,31 +70,37 @@ func main() {
 	var cineticTemperature float64 = 0.0;
 
 	Kernels.GenerateMoment(&moment, N);
-	//Utilitary.ExportXYZ("Results/pos" + ".pdb", &pos, 0, N);
+
+	var start = time.Now();
 
 	for i := 0; i < iters; i++ {
 		fmt.Println("\n-----Itération", i, "-----\n");
 
-		Kernels.VelocityVerlet(&pos, &forcesPeriodic, &moment, N);
+		//Kernels.VelocityVerlet(&pos, &forcesPeriodic, &moment, N);
+		Kernels.VelocityVerletLists(&pos, &forcesPeriodic, &moment, &VerletLists, N);
 
 
-		cineticEnergy = Kernels.KineticEnergy(&moment, N);
-		cineticTemperature = Kernels.KineticTemperature(cineticEnergy, N);
 
-		//Kernels.CalibrateMoment(&moment, N);
 
 		if i % 20 == 0 {
 			Kernels.BerendsenCorrection(&moment, N);
+
+			VerletLists = DataStructures.NewList(N);
+			Kernels.BuildVerletLists(&pos, &VerletLists, N);
 		}
 
 
 
-		fmt.Println("Énergie cinétique : ", cineticEnergy);
-		fmt.Println("Température cinétique : ", cineticTemperature);
 
-
-		Utilitary.ExportXYZ(outputFile + ".pdb", &pos, i, N);
-		//Utilitary.ExportXYZ("Results/mom" + ".pdb", &moment, i, N);
+		Utilitary.ExportXYZ(outputFile, &pos, i, N);
 	}
 
+
+
+	cineticEnergy = Kernels.KineticEnergy(&moment, N);
+	cineticTemperature = Kernels.KineticTemperature(cineticEnergy, N);
+	fmt.Println("Énergie cinétique : ", cineticEnergy);
+	fmt.Println("Température cinétique : ", cineticTemperature);
+
+	fmt.Println(time.Since(start));
 }
