@@ -1,11 +1,8 @@
 package Kernels
-import (/*"fmt"*/
-	"ism/Packages/DataStructures"
-	"ism/Packages/Maths"
-	/*"ism/Packages/Utilitary"*/
-	"math"
-	"math/rand"
-	/*"time"*/)
+import ("ism/Packages/DataStructures"
+		"ism/Packages/Maths"
+		"math"
+		"math/rand")
 
 
 const (
@@ -14,28 +11,28 @@ const (
     Z         // Z = 2
 )
 
-const R float64 = 3.0;
-const RSquared float64 = R * R;
-const Epsilon float64 = 0.2;
-const EpsilonLJ float64 = -48.0 * Epsilon;
-const FloatCompensation = 1e-11; // Afin d'éviter les pertes de précision lors de calculs avec des valeurs proches de 0
+const R 				float64 = 3.0;
+const RSquared 			float64 = R * R;
+const Epsilon 			float64 = 0.2;
+const EpsilonLJ 		float64 = -48.0 * Epsilon;
+const FloatCompensation float64 = 1e-11; // Afin d'éviter les pertes de précision lors de calculs avec des valeurs proches de 0
 
 
-const NSym int = 27;
-const RCut float64 = 10.0;
-const RCutSq float64 = RCut * RCut;
-const RMax float64 = RCut * 1.2;
-const RMaxSq float64 = RMax * RMax;
-const L float64 = 42.0;
+const NSym 				int 	= 27;
+const RCut 				float64 = 10.0;
+const RCutSq 			float64 = RCut * RCut;
+const RMax 				float64 = RCut * 1.2;
+const RMaxSq 			float64 = RMax * RMax;
+const L 				float64 = 42.0;
 
-const T0 float64 = 300.0;
+const T0 				float64 = 300.0;
 
-const deltaT float64 = 1.0;
-const CONVERSION_FORCE float64 = 0.0001 * 4.186;
-const mi float64 = 18.0; // Mass
-const CONSTANTE_R float64 = 0.00199;
+const deltaT 			float64 = 1.0;
+const CONVERSION_FORCE  float64 = 0.0001 * 4.186;
+const mi 				float64 = 18.0; // Mass
+const CONSTANTE_R 		float64 = 0.00199;
 
-const GAMMA float64 = 0.01;
+const GAMMA 			float64 = 0.01;
 
 
 var translate = [27][3]float64{
@@ -236,7 +233,6 @@ func KineticEnergy(p *DataStructures.Vector3, N int) float64 {
 		sum += ((p.X[i] * p.X[i]) + (p.Y[i] * p.Y[i]) + (p.Z[i] * p.Z[i])) / mi;
 	}
 
-	//return 1.0 / (2 * CONVERSION_FORCE) * (sum / mi);
 	return sum / (2 * CONVERSION_FORCE);
 }
 
@@ -280,7 +276,6 @@ func CenterOfMassCorrection(p *DataStructures.Vector3, N int) {
 		p.Z[i] -= Pz;
 	}
 
-	//CalibrateMoment(p, N);
 }
 
 func GenerateMoment(p *DataStructures.Vector3, N int) {
@@ -332,21 +327,6 @@ func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3,
 		pos.Y[i] -= math.Round((pos.Y[i] / L) + 0.5) * L;
 		pos.Z[i] -= math.Round((pos.Z[i] / L) + 0.5) * L;
 	}
-	
-	/*
-	for i := 0; i < N; i++ {
-		if math.Abs(pos.X[i]) > L * 0.5 {
-			pos.X[i] = pos.X[i] - (L*0.5) * Maths.Sign(-pos.X[i]);
-		}
-		if math.Abs(pos.Y[i]) > L * 0.5 {
-			pos.Y[i] = pos.Y[i] - (L*0.5) * Maths.Sign(-pos.Y[i]);
-		}
-		if math.Abs(pos.Z[i]) > L * 0.5 {
-			pos.Z[i] = pos.Z[i] - (L*0.5) * Maths.Sign(-pos.Z[i]);
-		}
-	}
-	*/
-
 
 	ComputeForcesPeriodic(pos, forces, N);
 
@@ -395,16 +375,12 @@ func BuildVerletLists(pos *DataStructures.Vector3, list *DataStructures.List, N 
 		for j := i+1; j < N; j++ {
 			for n := 0; n < NSym; n++ {
 
-				var xi float64 = pos.X[i];
-				var yi float64 = pos.Y[i];
-				var zi float64 = pos.Z[i];
-
 				var xj float64 = pos.X[j] + translate[n][X];
 				var yj float64 = pos.Y[j] + translate[n][Y];
 				var zj float64 = pos.Z[j] + translate[n][Z];
 
 				
-				var dist float64 = Maths.SquaredDistance(xi, yi, zi, xj, yj, zj);
+				var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
 
 				if dist < RMaxSq {
 					list.X[i] = append(list.X[i], j);
@@ -415,38 +391,3 @@ func BuildVerletLists(pos *DataStructures.Vector3, list *DataStructures.List, N 
 		}
 	}
 }
-
-/*
-func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
-
-	var newForces = DataStructures.NewVector3(N);
-	var d2 float64 = deltaT*deltaT;
-
-	for i := 0; i < N; i++ { // Update positions
-
-		pos.X[i] += (vel.X[i] * deltaT) + ((0.5 * (forces.X[i] / mi)) * d2);
-		pos.Y[i] += (vel.Y[i] * deltaT) + ((0.5 * (forces.Y[i] / mi)) * d2);
-		pos.Z[i] += (vel.Z[i] * deltaT) + ((0.5 * (forces.Z[i] / mi)) * d2);
-	}
-
-	ComputeForcesPeriodic(pos, &newForces, N);
-
-	for i := 0; i < N; i++ { // Update velocities
-		vel.X[i] += (0.5 * (forces.X[i] + newForces.X[i]) / mi) * deltaT;
-		vel.Y[i] += (0.5 * (forces.Y[i] + newForces.Y[i]) / mi) * deltaT;
-		vel.Z[i] += (0.5 * (forces.Z[i] + newForces.Z[i]) / mi) * deltaT;
-
-		forces.X[i] = newForces.X[i];
-		forces.Y[i] = newForces.Y[i];
-		forces.Z[i] = newForces.Z[i];
-
-		
-		p.X[i] = vel.X[i] / mi;
-		p.Y[i] = vel.Y[i] / mi;
-		p.Z[i] = vel.Z[i] / mi;
-		
-	}
-
-	//Utilitary.CopyVec3(forces, &newForces);
-}
-*/

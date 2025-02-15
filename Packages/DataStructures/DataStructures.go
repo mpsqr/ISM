@@ -15,11 +15,11 @@ func NewVector3(size int) Vector3 { // Constructor
 		X: make([]float64, size),
 		Y: make([]float64, size),
 		Z: make([]float64, size),
-	}
+	};
 }
 
 func NewList(size int) List {
 	return List{
 		X: make([][]int, size),
-	}
+	};
 }

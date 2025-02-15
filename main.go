@@ -12,12 +12,11 @@ import("fmt"
    Email : mateo.pasquier@ens.uvsq.fr
    Cours : ISM
    Compilation : go build -o ./bin/main main.go
-   Lancement : ./bin/main
+   Lancement : ./bin/main InputFile.xyz OutputFile.pdb iterations
 */
 
 
 const N int = 1000;
-const NLocal int = 100;
 
 func main() {
 
