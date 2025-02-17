@@ -11,19 +11,27 @@ const (
     Z         // Z = 2
 )
 
-const R 				float64 = 3.0;
-const RSquared 			float64 = R * R;
-const Epsilon 			float64 = 0.2;
-const EpsilonLJ 		float64 = -48.0 * Epsilon;
-const FloatCompensation float64 = 1e-11; // Afin d'éviter les pertes de précision lors de calculs avec des valeurs proches de 0
+const (
+	A = iota
+	B
+)
 
+const R 				float64 = 2.850;
+const RSquared 			float64 = R * R;
+const Epsilon 			float64 = 0.53;
+const EpsilonLJ 		float64 = -48.0 * Epsilon;
+const FloatCompensation float64 = 1e-12; // Afin d'éviter les pertes de précision lors de calculs avec des valeurs proches de 0
+
+
+const EpsilonAB			float64 = 1.0;
+const sigmaAB			float64 = 3.50;
 
 const NSym 				int 	= 27;
 const RCut 				float64 = 10.0;
 const RCutSq 			float64 = RCut * RCut;
 const RMax 				float64 = RCut * 1.2;
 const RMaxSq 			float64 = RMax * RMax;
-const L 				float64 = 42.0;
+const L 				float64 = 32.0;
 
 const T0 				float64 = 300.0;
 
@@ -164,9 +172,10 @@ func ComputeForcesPeriodic(pos *DataStructures.Vector3, forces *DataStructures.V
 }
 
 
-func ComputeForcesPeriodicLists(pos *DataStructures.Vector3, forces *DataStructures.Vector3, list *DataStructures.List, N int) float64 {
+func ComputeForcesPeriodicLists(pos *DataStructures.Vector3, forces *DataStructures.Vector3, list *DataStructures.List, forcesA *float64, indB int, N int) (float64, float64) {
 	
 	var energy float64 = 0.0;
+	var energyB float64 = 0.0;
 	ResetVec3(forces, N);
 
 	for n := 0; n < NSym; n++ {
@@ -183,11 +192,46 @@ func ComputeForcesPeriodicLists(pos *DataStructures.Vector3, forces *DataStructu
 					continue;
 				}
 
-				
+					
 				var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
 
 				if dist < RCutSq /*|| dist > 1e-6*/ {
 					// Optimisation des calculs des puissances
+
+					if i == indB || ind == indB {
+						var r1 float64 = sigmaAB / (dist + FloatCompensation);
+						var r2 = r1 * r1;
+						var r4 = r2 * r2;
+						var r5 = r4 * r1;
+						var r8 = r4 * r4;
+						var r12 = r8 * r4;
+						var r14 = r12 * r2;
+						var r15 = r14 * r1;
+
+						var localForce = (-15.0 * EpsilonAB) * (r15 - r5);
+
+						var forceX = localForce * (pos.X[i] - xj);
+						var forceY = localForce * (pos.Y[i] - yj);
+						var forceZ = localForce * (pos.Z[i] - zj);
+								
+						// Mise à jour des forces
+						forces.X[i] += forceX;
+						forces.Y[i] += forceY;
+						forces.Z[i] += forceZ;
+								
+						forces.X[ind] -= forceX;
+						forces.Y[ind] -= forceY;
+						forces.Z[ind] -= forceZ;
+								
+
+
+
+						energyB += r15 - (r5 + r5 + r5);
+
+
+						continue;
+					}
+
 					var r2 float64 = RSquared / (dist + FloatCompensation);
 					var r4 float64 = r2 * r2;
 					var r6 float64 = r4 * r2;
@@ -200,26 +244,26 @@ func ComputeForcesPeriodicLists(pos *DataStructures.Vector3, forces *DataStructu
 					var forceX = localForce * (pos.X[i] - xj);
 					var forceY = localForce * (pos.Y[i] - yj);
 					var forceZ = localForce * (pos.Z[i] - zj);
-						
+							
 					// Mise à jour des forces
 					forces.X[i] += forceX;
 					forces.Y[i] += forceY;
 					forces.Z[i] += forceZ;
-						
+							
 					forces.X[ind] -= forceX;
 					forces.Y[ind] -= forceY;
 					forces.Z[ind] -= forceZ;
-						
+							
 
 
-
+					*forcesA += r12 - (r6 + r6);
 					energy += r12 - (r6 + r6);
 				}
 			}
 		}
 	}
 
-	return (energy * Epsilon) * 4.0;
+	return (energy * Epsilon) * 4.0, (energyB * EpsilonAB);
 }
 
 
@@ -303,13 +347,21 @@ func GenerateMoment(p *DataStructures.Vector3, N int) {
 
 func BerendsenCorrection(p *DataStructures.Vector3, N int) {
 	var cineticEnergy float64 = KineticEnergy(p, N);
-	var ratio float64 = T0 / KineticTemperature(cineticEnergy, N);
-
+	//var ratio float64 = T0 / KineticTemperature(cineticEnergy, N);
+	var ratio float64 = GAMMA * (T0 / KineticTemperature(cineticEnergy, N) - 1.0);
+	/*
 	for i := 0; i < N; i++ {
 		p.X[i] = p.X[i] + (GAMMA * (ratio - 1.0) * p.X[i]);
 		p.Y[i] = p.Y[i] + (GAMMA * (ratio - 1.0) * p.Y[i]);
 		p.Z[i] = p.Z[i] + (GAMMA * (ratio - 1.0) * p.Z[i]);
 	}
+	*/
+	for i := 0; i < N; i++ {
+		p.X[i] = p.X[i] * ratio + p.X[i];
+		p.Y[i] = p.Y[i] * ratio + p.Y[i];;
+		p.Z[i] = p.Z[i] * ratio + p.Z[i];;
+	}
+
 }
 
 func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, N int) {
@@ -342,7 +394,7 @@ func VelocityVerlet(pos *DataStructures.Vector3, forces *DataStructures.Vector3,
 
 }
 
-func VelocityVerletLists(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, list *DataStructures.List, N int) {
+func VelocityVerletLists(pos *DataStructures.Vector3, forces *DataStructures.Vector3, p *DataStructures.Vector3, list *DataStructures.List, forcesA *float64, indB int, N int) {
 
 	var hdt float64 = deltaT * 0.5;
 
@@ -363,7 +415,7 @@ func VelocityVerletLists(pos *DataStructures.Vector3, forces *DataStructures.Vec
 	}
 
 
-	ComputeForcesPeriodicLists(pos, forces, list, N);
+	ComputeForcesPeriodicLists(pos, forces, list, forcesA, indB, N);
 
 	for i := 0; i < N; i++ {
 		p.X[i] -= hdt * (forces.X[i] * CONVERSION_FORCE);

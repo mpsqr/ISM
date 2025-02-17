@@ -45,12 +45,15 @@ func main() {
 	var moment = DataStructures.NewVector3(N); // Moment
 	var VerletLists = DataStructures.NewList(N);
 
+	var types = DataStructures.NewArray(N);
+
 
 
 	// Initialisation
-	Utilitary.ImportXYZ(InputFile, &pos);
+	Utilitary.ImportXYZ(InputFile, &pos, &types);
 	Kernels.BuildVerletLists(&pos, &VerletLists, N);
 
+	var indB = Utilitary.FindInArray(&types, "B", N); // Fonction qui permet de connaître la position de l'unique particule B dans la liste, pour ne pas le recalculer à chaque fois
 
 
 	fmt.Println("ULJ: ", Kernels.ComputeForces(&pos, &forces, N));
@@ -59,8 +62,12 @@ func main() {
 	fmt.Println("ULJ periodic: ", Kernels.ComputeForcesPeriodic(&pos, &forcesPeriodic, N));
 	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodic, N));
 
-	fmt.Println("ULJ periodic with Verlet Lists: ", Kernels.ComputeForcesPeriodicLists(&pos, &forcesPeriodicLists, &VerletLists, N));
-	fmt.Println("Somme des forces du système périodique : ", Kernels.ComputeSumForces(&forcesPeriodicLists, N));
+
+	var forcesA float64 = 0.0;
+	var forcesB float64 = 0.0;
+	forcesA, forcesB = Kernels.ComputeForcesPeriodicLists(&pos, &forcesPeriodicLists, &VerletLists, &forcesA, indB, N);
+	fmt.Println("Moyenne des forces A : ", forcesA / float64(N-1));
+	fmt.Println("Force B : ", forcesB);
 
 
 	fmt.Println("\n\n---------------Début de la simulation---------------\n\n");
@@ -74,13 +81,11 @@ func main() {
 
 	for i := 0; i < iters; i++ {
 		fmt.Println("\n-----Itération", i, "-----\n");
-		
-		Kernels.VelocityVerletLists(&pos, &forcesPeriodic, &moment, &VerletLists, N);
+
+		Kernels.VelocityVerletLists(&pos, &forcesPeriodic, &moment, &VerletLists, &forcesA, indB, N);
 
 
-
-
-		if i % 20 == 0 {
+		if i % 150 == 0 {
 			Kernels.BerendsenCorrection(&moment, N);
 
 			VerletLists = DataStructures.NewList(N);
