@@ -179,6 +179,10 @@ func ComputeForcesPeriodicLists(pos *DataStructures.Vector3, forces *DataStructu
 				var yj float64 = pos.Y[ind] + translate[n][Y];
 				var zj float64 = pos.Z[ind] + translate[n][Z];
 
+				if ind < i {
+					continue;
+				}
+
 				
 				var dist float64 = Maths.SquaredDistance(pos.X[i], pos.Y[i], pos.Z[i], xj, yj, zj);
 

@@ -74,8 +74,7 @@ func main() {
 
 	for i := 0; i < iters; i++ {
 		fmt.Println("\n-----Itération", i, "-----\n");
-
-		//Kernels.VelocityVerlet(&pos, &forcesPeriodic, &moment, N);
+		
 		Kernels.VelocityVerletLists(&pos, &forcesPeriodic, &moment, &VerletLists, N);
 
 
